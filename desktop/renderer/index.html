@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My Download Manager — Windows</title>
+    <style>
+      :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --muted: #475569; --border: #e2e8f0; }
+      body.dark { --bg: #020617; --card: #0f172a; --text: #f8fafc; --muted: #94a3b8; --border: #1e293b; }
+      body { font-family: system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+      header { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; background: var(--card); border-bottom: 1px solid var(--border); }
+      main { max-width: 960px; margin: 24px auto; padding: 0 24px; display: flex; flex-direction: column; gap: 16px; }
+      .row { display: flex; gap: 10px; }
+      input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+      button { padding: 10px 16px; border-radius: 8px; border: none; background: #2563eb; color: #fff; font-weight: 600; cursor: pointer; }
+      button.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+      .muted { color: var(--muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>My Download Manager</strong>
+      <div class="row">
+        <button id="folderBtn" class="secondary">Choose Folder</button>
+        <button id="pasteBtn" class="secondary">Detect Pasted URL</button>
+        <button id="themeBtn" class="secondary">Dark Mode</button>
+      </div>
+    </header>
+    <main>
+      <div class="row">
+        <input id="urlInput" type="url" placeholder="Paste a direct HTTP/HTTPS file URL..." />
+        <button id="addBtn">Add Download</button>
+      </div>
+      <div id="statusMsg" class="muted">Store downloads locally. Executable files require confirmation.</div>
+      <div id="list"></div>
+    </main>
+    <script>
+      const api = window.myDownloadManager;
+      const urlInput = document.getElementById('urlInput');
+      const statusMsg = document.getElementById('statusMsg');
+      const list = document.getElementById('list');
+
+      document.getElementById('themeBtn').addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+      });
+      document.getElementById('folderBtn').addEventListener('click', async () => {
+        const folder = await api.pickFolder();
+        statusMsg.textContent = 'Download folder: ' + folder;
+      });
+      document.getElementById('pasteBtn').addEventListener('click', async () => {
+        const urls = await api.readClipboardUrls();
+        if (urls[0]) urlInput.value = urls[0];
+      });
+      document.getElementById('addBtn').addEventListener('click', async () => {
+        const res = await api.addDownload(urlInput.value.trim(), false);
+        if (!res.ok && res.requiresExecutableConfirmation) {
+          if (confirm('Executable file detected (' + res.filename + '). Trust source URL?\n\n' + res.url)) {
+            await api.addDownload(res.url, true);
+            urlInput.value = '';
+          }
+          return;
+        }
+        if (!res.ok) { statusMsg.textContent = res.error; return; }
+        urlInput.value = '';
+      });
+
+      api.onUpdated(({ jobs }) => {
+        list.innerHTML = jobs.map((j) =>
+          `<div class="card"><strong>${j.filename}</strong><div class="muted">${j.status} · ${j.downloadedBytes} / ${j.totalBytes ?? '?'} bytes (${j.connectionsUsed} connections)</div>${j.error ? `<div style="color:#dc2626;font-size:13px">${j.error}</div>` : ''}</div>`
+        ).join('');
+      });
+    </script>
+  </body>
+</html>

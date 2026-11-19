@@ -1,0 +1,6 @@
+{
+  "name": "My Download Manager",
+  "description": "Fast multi-connection resumable download manager for Android (APK) and Windows (EXE) with queue management, bandwidth limits, and security-first link verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

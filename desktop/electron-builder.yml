@@ -1,0 +1,18 @@
+appId: com.mydownloadmanager.windows
+productName: My Download Manager
+directories:
+  output: release
+files:
+  - dist/**/*
+  - renderer/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
